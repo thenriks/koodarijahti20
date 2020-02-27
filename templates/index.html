@@ -1,0 +1,76 @@
+<!doctype html>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<title>Koodarijahti</title>
+
+<div id="app">
+  	<p>Pisteet: {{ score }}</p>
+
+	<button v-on:click="clickPlay">{{ playCaption }}</button>
+
+	<p v-if="clicked">
+  		Painalluksia seuraavaan voittoon: {{ nextWin }}
+  	</p>
+  	<p v-else-if="gameOver">
+  		Peli päättyi. Aloita uusi painamalla painiketta.
+  	</p>
+  	<p v-else>
+  		Paina nappia nähdäksesi tilanteen.
+  	</p>
+</div>
+
+<script>
+  
+var app = new Vue({
+  el: '#app',
+  data: {
+    score: 20,
+    nextWin: 0,
+    clicked: false,
+    gameOver: false,
+    playCaption: "Pelaa"
+  },
+  beforeMount: function () {
+      axios.post('/get_state')
+          .then(response => {
+            this.score = response.data.score;
+            console.log("created");
+          })
+          .catch(e => {
+            console.log(e);
+          });
+  },
+  methods: {
+  	clickPlay: function () {
+      if (this.gameOver) {
+        axios.post('/reset_player')
+          .then(response => {
+            this.score = response.data.score;
+            this.playCaption = "Pelaa";
+            this.gameOver = false;
+          })
+          .catch(e => {
+            console.log(e);
+          });
+      } else {
+        axios.post(`/play`)
+        .then(response => {
+          this.score = response.data.score;
+          this.nextWin = response.data.next_reward;
+          if (this.score <= 0) {
+            this.playCaption = "Uusi peli";
+            this.gameOver = true;
+            this.clicked = false;
+          }
+        })
+        .catch(e => {
+          console.log(e);
+        });
+        this.clicked = true;
+      }
+  	}
+  }
+})
+</script>
